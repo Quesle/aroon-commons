@@ -12,7 +12,6 @@ import org.aroon.commons.socket.manager.MessageChannel;
  */
 public class AroonTransactionConstructor {
 	private AroonTransactionAcceptor acceptor;
-	@SuppressWarnings("unused")
 	private AroonTransactionStack transactionStack;
 	private MessageChannel messageChannel;
 	
