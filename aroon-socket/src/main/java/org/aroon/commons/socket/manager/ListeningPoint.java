@@ -101,4 +101,6 @@ public interface ListeningPoint {
      */
     public static final int PORT_5061 = 5061;
 
+	public String getRemoteListeningPointName();
+
 }

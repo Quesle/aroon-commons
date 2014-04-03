@@ -102,4 +102,9 @@ public class ListeningPointImpl implements ListeningPoint{
 		}
 		return "PeerListeningPoint:<"+localAddress+":"+localPort+":"+peerPort+">";
 	}
+	
+	@Override
+	public String getRemoteListeningPointName() {
+		return "<"+peerAddress+":"+peerPort+">";
+	}
 }

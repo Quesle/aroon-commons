@@ -45,7 +45,7 @@ public abstract class MessageChannel {
      *
      * @param sipMessage Message to send.
      */
-    public abstract void sendMessage(Object object) throws IOException;
+    public abstract void sendMessage(BlockingDatagramPackage blockingDatagramPackage) throws IOException;
 	
     public abstract String getPeerAddress();
     

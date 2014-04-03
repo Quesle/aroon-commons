@@ -9,6 +9,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import org.apache.log4j.Logger;
+import org.aroon.commons.socket.context.ProtocolController;
 import org.aroon.commons.socket.context.ProtocolListener;
 import org.aroon.commons.socket.context.ProtocolParser;
 import org.aroon.commons.socket.factory.MessageProcessorFactory;
@@ -19,6 +21,7 @@ import org.aroon.commons.socket.net.DefaultNetworkLayer;
 import org.aroon.commons.socket.net.NetworkLayer;
 
 public class AroonTransactionStack extends TransactionStack implements ProtocolListener{
+	Logger logger = Logger.getLogger(AroonTransactionStack.class);
 	private static final int DEFAULT_THREAD_POOL_SIZE= 3;
 	public NetworkLayer networkLayer;
 	
@@ -61,7 +64,8 @@ public class AroonTransactionStack extends TransactionStack implements ProtocolL
 			String pointName = iterator.next();
 			AroonTransactionAcceptor acceptor = acceptorTable.get(pointName);
 			acceptor.start();
-			System.out.println(pointName + " is started.");
+			
+			logger.info("Server started: " + pointName);
 		}
 	}
 	
@@ -92,7 +96,16 @@ public class AroonTransactionStack extends TransactionStack implements ProtocolL
 		if(constructorTable.containsKey(key)){
 			return constructorTable.get(key);
 		}
-		return null;
+		
+		String localListeningPointName = listeningPoint.getLocalListeningPointName();
+		if(acceptorTable.containsKey(localListeningPointName)){
+			AroonTransactionAcceptor acceptor = acceptorTable.get(localListeningPointName);
+			AroonTransactionConstructor constructor = acceptor.createConstructorTransaction(listeningPoint);
+			return constructor;
+		}
+		
+		AroonTransactionConstructor defaultConstrutor = createConstructorTransaction(listeningPoint);
+		return defaultConstrutor;
 	}
 	
 	/**
@@ -127,8 +140,6 @@ public class AroonTransactionStack extends TransactionStack implements ProtocolL
 			}else{
 				acceptor = acceptorTable.get(listeningPointKey);
 			}
-			
-			createConstructorTransaction(localListeningPoint, acceptor);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -160,8 +171,9 @@ public class AroonTransactionStack extends TransactionStack implements ProtocolL
 	 * Create TransactionConstructor without bind sending end port.
 	 * @param localListeningPoint
 	 */
-	public void createConstructorTransaction(ListeningPoint localListeningPoint){
+	public AroonTransactionConstructor createConstructorTransaction(ListeningPoint localListeningPoint){
 		
+		return null;
 	}
 
 	public void bind(ListeningPoint listeningPoint){
@@ -169,13 +181,7 @@ public class AroonTransactionStack extends TransactionStack implements ProtocolL
 			if(listeningPoint == null)
 				throw new Exception("ListeningPoint is null!");
 			
-			String listeningPointKey = listeningPoint.getLocalListeningPointName();
-			if(!listeningPoints.containsKey(listeningPointKey)){
-				createMessageProcessor(listeningPoint);
-				listeningPoints.put(listeningPointKey, listeningPoint);
-			}else{
-				
-			}
+			createAcceptTransaction(listeningPoint);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -215,5 +221,12 @@ public class AroonTransactionStack extends TransactionStack implements ProtocolL
 		String acceptorName = listeningPoint.getLocalListeningPointName();
 		AroonTransactionAcceptor acceptor = acceptorTable.get(acceptorName);
 		acceptor.setProtocolParser(protocolParser);
+	}
+
+	public void addProtocolController(ListeningPoint listeningPoint,
+			ProtocolController protocolController) {
+		String acceptorName = listeningPoint.getLocalListeningPointName();
+		AroonTransactionAcceptor acceptor = acceptorTable.get(acceptorName);
+		acceptor.setProtocolController(protocolController);
 	}
 }

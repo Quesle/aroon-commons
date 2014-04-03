@@ -22,7 +22,7 @@ public abstract class MessageProcessor {
 	}
 	
 	public AroonTransactionStack transactionStack;
-	public AroonTransactionAcceptor acceptor;
+	private AroonTransactionAcceptor acceptor;
 	private String transport;
 	private InetAddress inetAddress;
 	private int port;
@@ -57,6 +57,10 @@ public abstract class MessageProcessor {
 	
 	public InetAddress getInetAddress(){
 		return inetAddress;
+	}
+	
+	public AroonTransactionAcceptor getTransactionAcceptor(){
+		return acceptor;
 	}
 	
 	/**

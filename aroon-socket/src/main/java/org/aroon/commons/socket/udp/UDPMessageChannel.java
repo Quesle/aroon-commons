@@ -1,14 +1,17 @@
 package org.aroon.commons.socket.udp;
 
+import java.io.IOException;
+import java.net.DatagramPacket;
 import java.net.InetAddress;
 
+import org.aroon.commons.socket.AroonTransactionAcceptor;
 import org.aroon.commons.socket.AroonTransactionStack;
-import org.aroon.commons.socket.context.ProtocolParser;
 import org.aroon.commons.socket.manager.BlockingDatagramPackage;
+import org.aroon.commons.socket.manager.ListeningPoint;
 import org.aroon.commons.socket.manager.MessageChannel;
 
 public class UDPMessageChannel extends MessageChannel implements Runnable{
-	private UDPMessageProcessor messageProcessor;
+	private UDPMessageProcessor udpMessageProcessor;
 	AroonTransactionStack transactionStack;
 	Thread mythread;
 	String myAddress;
@@ -70,7 +73,7 @@ public class UDPMessageChannel extends MessageChannel implements Runnable{
 		
 		while(true){
 			BlockingDatagramPackage blockingPacket = null;
-			if(messageProcessor.threadPoolSize != -1){
+			if(udpMessageProcessor.threadPoolSize != -1){
 				try {
 					blockingPacket = udpMessageProcessor.messageQueue.take();
 				} catch (InterruptedException e) {
@@ -88,41 +91,26 @@ public class UDPMessageChannel extends MessageChannel implements Runnable{
 	}
 
 	private void processIncomingDataPacket(BlockingDatagramPackage blockingPacket) {
+		DatagramPacket datagramPacket = blockingPacket.getDatagramPacket();
+		int length = datagramPacket.getLength();
+		byte[] message = new byte[length];
+		System.arraycopy(datagramPacket.getData(), 0, message, 0, message.length);
+		
 		try {
-			ProtocolParser parser = messageProcessor.acceptor.getProtocolParser();
-			if(parser == null){
-				throw new ClassNotFoundException("Not found ProtocolParser class");
-			}
+			AroonTransactionAcceptor acceptor = messageProcessor.getTransactionAcceptor();
 			
-			parser.processProtocolResolver(blockingPacket);
-		
-			/*ProtocolFilter protocolFilter = transactionStack.getProtocolFilter();
-			if(protocolFilter == null){
-				throw new ClassNotFoundException("Not found ProtocolFilter class");
-			}
-		
-			ProtocolController protocolController = transactionStack.getProtocolController();
-			if(protocolController == null){
-				throw new ClassNotFoundException("Not found ProtocolController class");
-			}*/
-			//protocolController.setMessageChannel(this);
-		} catch (ClassNotFoundException e) {
+			ListeningPoint listeningPoint = acceptor.getListeningPoint();
+			listeningPoint.setPeerAddress(datagramPacket.getAddress().getHostAddress());
+			listeningPoint.setPeerPort(datagramPacket.getPort());
+			acceptor.processAcceptedBytesMessage(listeningPoint, message);
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 
 	@Override
-	public void sendMessage(Object object) {
-/*		if(compiler == null){
-			try {
-				throw new Exception("Not found ProtocolCompiler class.");
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}
-		BlockingDatagramPackage blockingDatagramPackage = compiler.processProtocolCompiler(object);
-		
-
+	public void sendMessage(BlockingDatagramPackage	blockingDatagramPackage) {
+		udpMessageProcessor = (UDPMessageProcessor) this.messageProcessor;
 		DatagramPacket datagramPacket = blockingDatagramPackage.getDatagramPacket();
 		try {
 			if(datagramPacket == null){
@@ -130,19 +118,16 @@ public class UDPMessageChannel extends MessageChannel implements Runnable{
 			}
 			
 			if(myPort == datagramPacket.getPort()){
-				System.out.println("............");
-				return;
+				throw new IOException("Warn: The sending port is same of the listening port.");
 			}
-			
-			if(messageProcessor.sock == null){
+			if(udpMessageProcessor.sock == null){
 				throw new ClassNotFoundException("Not found DatagramScoket class.");
 			}
-			//messageProcessor.sock = new DatagramSocket();
-			messageProcessor.sock.send(datagramPacket);
+			udpMessageProcessor.sock.send(datagramPacket);
 		} catch (IOException | ClassNotFoundException e) {
 			e.printStackTrace();
 		}
-*/	
+	
 	}
 	
 	/**

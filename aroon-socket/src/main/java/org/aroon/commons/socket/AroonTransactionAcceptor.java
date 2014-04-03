@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
+import org.apache.log4j.Logger;
+import org.aroon.commons.socket.context.ProtocolController;
 import org.aroon.commons.socket.context.ProtocolParser;
 import org.aroon.commons.socket.factory.MessageProcessorFactory;
 import org.aroon.commons.socket.manager.ListeningPoint;
@@ -11,6 +13,7 @@ import org.aroon.commons.socket.manager.MessageChannel;
 import org.aroon.commons.socket.manager.MessageProcessor;
 
 public class AroonTransactionAcceptor {
+	private Logger logger = Logger.getLogger(AroonTransactionAcceptor.class);
 	/**
 	 * The socket Transaction Stack.
 	 */
@@ -28,6 +31,7 @@ public class AroonTransactionAcceptor {
 	
 	
 	private ProtocolParser protocolParser;
+	private ProtocolController protocolController;
 	
 	public AroonTransactionAcceptor(AroonTransactionStack transactionStack,
 			ListeningPoint listeningPoint){
@@ -59,7 +63,7 @@ public class AroonTransactionAcceptor {
 			MessageChannel messageChannel = messageProcessor.createMessageChannel(
 					inetAddress, localListeningPoint.getPeerPort());
 			constructor = new AroonTransactionConstructor(
-					this, transactionStack, messageChannel);
+					this, transactionStack, messageChannel, localListeningPoint);
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
 		}
@@ -68,6 +72,7 @@ public class AroonTransactionAcceptor {
 	}
 
 	public void start() {
+		logger.info(listeningPoint.getLocalListeningPointName() + " is started.");
 		messageProcessor.start();
 	}
 
@@ -77,5 +82,38 @@ public class AroonTransactionAcceptor {
 	
 	public ProtocolParser getProtocolParser(){
 		return protocolParser;
+	}
+
+	public ProtocolController getProtocolController() {
+		return protocolController;
+	}
+
+	public void setProtocolController(ProtocolController protocolController) {
+		this.protocolController = protocolController;
+	}
+
+	public void processAcceptedBytesMessage(ListeningPoint peerlisteningPoint, byte[] message) {
+		try {
+			logger.info("Receive message form " + peerlisteningPoint.getRemoteListeningPointName());
+			ProtocolParser parser = this.getProtocolParser();
+			if(parser == null){
+				throw new ClassNotFoundException("Not found ProtocolParser class");
+			}
+			Object object = parser.processProtocolBytesResolver(message);
+			
+			protocolController.setTransactionAcceptor(this);
+			protocolController.setListeningPoint(peerlisteningPoint);
+			protocolController.processRequest(object);
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public ListeningPoint getListeningPoint() {
+		return listeningPoint;
+	}
+
+	public AroonTransactionStack getTransactionStack() {
+		return transactionStack;
 	}
 }

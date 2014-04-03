@@ -17,7 +17,6 @@ import org.aroon.commons.socket.manager.MessageChannel;
 import org.aroon.commons.socket.manager.MessageProcessor;
 
 public class UDPMessageProcessor extends MessageProcessor implements Runnable{
-
 	protected BlockingQueue<BlockingDatagramPackage> messageQueue;
 	
 	protected DatagramSocket sock;
@@ -58,9 +57,16 @@ public class UDPMessageProcessor extends MessageProcessor implements Runnable{
 		}else{
 			threadPoolSize = 1;
 		}
+		
+		
 		messageQueue = new LinkedBlockingQueue<BlockingDatagramPackage>();
 		try {
-			sock = new DatagramSocket(listeningPoint.getLocalPort());
+			if(listeningPoint.getLocalPort() == 0){
+				sock = new DatagramSocket();
+			}else{
+				sock = new DatagramSocket(listeningPoint.getLocalPort());
+			}
+			
 		} catch (SocketException e) {
 			e.printStackTrace();
 		}
@@ -78,10 +84,11 @@ public class UDPMessageProcessor extends MessageProcessor implements Runnable{
 			}
 		}
 		
-		DatagramPacket packet = new DatagramPacket(new byte[8192], 8192);
+		
 		try {
 			BlockingDatagramPackage blockingPackage = null;
-			while(isRunning){
+			while(true){
+				DatagramPacket packet = new DatagramPacket(new byte[8192], 8192);
 				sock.receive(packet);
 				blockingPackage = new BlockingDatagramPackage();
 				blockingPackage.setDatagramPacket(packet);

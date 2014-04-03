@@ -1,13 +1,18 @@
 package org.aroon.commons.socket.context;
 
-import org.aroon.commons.socket.manager.MessageChannel;
+import org.aroon.commons.socket.AroonTransactionAcceptor;
+import org.aroon.commons.socket.manager.ListeningPoint;
 
 public interface ProtocolController {
 	
-	public void setMessageChannel(MessageChannel messageChannel);
+	public void setTransactionAcceptor(AroonTransactionAcceptor acceptor);
 	
-	public void processRequest(Object clas);
+	public void setListeningPoint(ListeningPoint listeningPoint);
 	
-	public void processResponse(Object clas, int port);
+	public void processRequest(Object object);
+	
+	public void processResponse(Object clas);
+	
+	public void sendBytesMessage(Object object);
 	
 }
