@@ -1,31 +1,19 @@
 package org.aroon.commons.socket.example.parser;
 
-import java.net.DatagramPacket;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 import org.aroon.commons.socket.context.ProtocolParser;
-import org.aroon.commons.socket.manager.BlockingDatagramPackage;
 
 public class MyProtocolParser implements ProtocolParser{
 	private MyProtocol protocol = null;
 	
 	@Override
-	public Object processProtocolResolver(
-			BlockingDatagramPackage blockingPacket) {
-		DatagramPacket packet = blockingPacket.getDatagramPacket();
-		int packetLength = packet.getLength();
-		
-		byte[] bytes = packet.getData();
-		byte[] messageBytes = new byte[packetLength];
-		System.arraycopy(bytes, 0, messageBytes, 0, packetLength);
-		System.out.println(Arrays.toString(messageBytes));
-		
-		protocol = parserBytesArrayProtocol(messageBytes);
+	public Object processProtocolBytesResolver(byte[] message) {
+		protocol = parserBytesArrayProtocol(message);
 		return protocol;
 	}
 	
@@ -66,8 +54,8 @@ public class MyProtocolParser implements ProtocolParser{
 	}
 	
 	@Override
-	public BlockingDatagramPackage processProtocolCompiler(Object object) {
-		BlockingDatagramPackage blockingDatagramPackage = null;
+	public byte[] processProtocolBytesCompiler(Object object) {
+		byte[] response = null;
 		try {
 			MyProtocol protocol = null;
 			if(object instanceof MyProtocol){
@@ -75,17 +63,12 @@ public class MyProtocolParser implements ProtocolParser{
 			}else{
 				throw new Exception("Class type not know.");
 			}
-			/*InetSocketAddress inet = new InetSocketAddress("192.168.1.211", port);
-			byte[] response = createBytesCompiler(protocol);
-			DatagramPacket datagramPacket = new DatagramPacket(response, response.length);
-			datagramPacket.setSocketAddress(inet);
-			blockingDatagramPackage = new BlockingDatagramPackage();
-			blockingDatagramPackage.setDatagramPacket(datagramPacket);*/
+			response = createBytesCompiler(protocol);
 			
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		return blockingDatagramPackage;
+		return response;
 	}
 
 	private byte[] createBytesCompiler(MyProtocol protocol) {
@@ -125,6 +108,17 @@ public class MyProtocolParser implements ProtocolParser{
 			indexi += list.get(i).length;
 		}
 		return segments;
+	}
+
+	@Override
+	public String processProtocolTextComplier(Object object) {
+		return null;
+	}
+
+	@Override
+	public Object processProtocolTextResolver(String text) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 	
 }
